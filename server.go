@@ -8,6 +8,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+type DayPayload struct {
+	ID      string  `json:"id"`
+	Label   string  `json:"label"`
+	Entries []Entry `json:"entries"`
+}
+
 func setupRouter(db *gorm.DB) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
@@ -22,15 +28,22 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 	}))
 
 	r.GET("/days/:dayId", func(c *gin.Context) {
-		entry := &Entry{}
-		db.Where("Day = ?", c.Param("dayId")).First(&entry)
-		c.JSON(200, entry)
+		day := &Day{}
+		db.Where("Label = ?", c.Param("dayId")).First(&day)
+		entries := []Entry{}
+		db.Where("day_id = ?", day.ID).Find(&entries)
+		payload := &DayPayload{
+			ID:      day.ID,
+			Label:   day.Label,
+			Entries: entries,
+		}
+		c.JSON(200, payload)
 	})
 
 	r.GET("/days/", func(c *gin.Context) {
-		entries := []Entry{}
-		db.Find(&entries)
-		c.JSON(200, entries)
+		days := []Day{}
+		db.Find(&days)
+		c.JSON(200, days)
 	})
 
 	return r
